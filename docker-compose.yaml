@@ -1,0 +1,59 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "30020:30020"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  inventory-frontend:
+    build:
+      context: ./inventory-frontend
+    volumes:
+      - react_build:/inventory-frontend/build
+    env_file:
+      - ./inventory-frontend/.env
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "30050:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx-setup.conf:/etc/nginx/conf.d/default.conf:ro
+      - react_build:/var/www/inventory-frontend
+      - /etc/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - backend
+      - inventory-frontend
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "35432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  react_build:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
