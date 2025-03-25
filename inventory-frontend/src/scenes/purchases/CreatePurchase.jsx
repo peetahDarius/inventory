@@ -1,9 +1,9 @@
-import { Box, Button, TextField, Typography, Paper } from "@mui/material";
+import { Box, Button, TextField, Typography, Paper, Autocomplete } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import { useTheme } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../api";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +13,7 @@ const CreatePurchase = () => {
   const navigate = useNavigate();
 
   const [purchaseItems, setPurchaseItems] = useState([]);
+  const [equipments, setEquipments] = useState([])
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -24,10 +25,23 @@ const CreatePurchase = () => {
     seller_description: "",
   });
 
+  useEffect(() => {
+    fetchEquipments()
+  }, [])
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const fetchEquipments = async () => {
+    try {
+      const response = await api.get("/api/equipments/")
+      setEquipments(response.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const handleSaveItem = (e) => {
     e.preventDefault();
@@ -128,7 +142,7 @@ const CreatePurchase = () => {
         disabled={submitting}
         sx={{
           mb: 2,
-          backgroundColor: colors.greenAccent[400],
+          backgroundColor: colors.greenAccent[600],
           color: colors.grey[100],
           textTransform: "none",
           padding: "10px",
@@ -155,14 +169,47 @@ const CreatePurchase = () => {
           onSubmit={handleSaveItem}
           sx={{ display: "flex", flexDirection: "column", gap: 2 }}
         >
-          <TextField
-            label="Item Name"
-            name="name"
-            variant="outlined"
-            fullWidth
-            value={formData.name}
-            onChange={handleInputChange}
-          />
+          <Autocomplete
+  freeSolo
+  options={equipments}
+  getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
+  onChange={(event, value) => {
+    if (typeof value === 'string') {
+      setFormData((prev) => ({
+        ...prev,
+        name: value,
+        description: "",
+      }));
+    } else if (value) {
+      setFormData((prev) => ({
+        ...prev,
+        name: value.name,
+        description: value.description,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, name: "", description: "" }));
+    }
+  }}
+  onInputChange={(event, newInputValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: newInputValue,
+      description: "",
+    }));
+  }}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      label="Item Name"
+      name="name"
+      variant="outlined"
+      fullWidth
+      value={formData.name}
+      onChange={handleInputChange}
+    />
+  )}
+/>
+
           <TextField
             label="Quantity"
             name="quantity"
@@ -173,15 +220,19 @@ const CreatePurchase = () => {
             onChange={handleInputChange}
           />
           <TextField
-            label="Description"
-            name="description"
-            variant="outlined"
-            fullWidth
-            multiline
-            rows={3}
-            value={formData.description}
-            onChange={handleInputChange}
-          />
+  label="Description"
+  name="description"
+  variant="outlined"
+  fullWidth
+  multiline
+  rows={3}
+  value={formData.description}
+  onChange={handleInputChange}
+  InputProps={{
+    readOnly: equipments.some(eq => eq.name === formData.name)
+  }}
+/>
+
           <TextField
             label="Price"
             name="price"
@@ -221,7 +272,7 @@ const CreatePurchase = () => {
             variant="contained"
             type="submit"
             sx={{
-              backgroundColor: colors.greenAccent[400],
+              backgroundColor: colors.greenAccent[600],
               color: colors.grey[100],
               textTransform: "none",
               padding: "10px",

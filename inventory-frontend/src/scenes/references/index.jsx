@@ -1,4 +1,4 @@
-import { Box, Button, TextField } from "@mui/material";
+import { Box, Button, TextField, Link as MuiLink } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
@@ -7,77 +7,64 @@ import { useEffect, useState } from "react";
 import api from "../../api";
 import { Link } from "react-router-dom";
 
-const Purchases = ({ userData }) => {
+const References = ({ userData }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [purchasesData, setPurchasesData] = useState([]);
+  const [referencesData, setReferencesData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchPurchases = async () => {
+  const fetchReferences = async () => {
     try {
-      const response = await api.get("/api/purchased/");
-      setPurchasesData(response.data);
+      const response = await api.get("/api/references/");
+      setReferencesData(response.data);
     } catch (error) {
       console.error(error);
     }
   };
 
   useEffect(() => {
-    fetchPurchases();
+    fetchReferences();
   }, []);
 
   const columns = [
     { field: "id", headerName: "ID", flex: 0.5 },
     {
-      field: "name",
-      headerName: "Item Name",
+      field: "client_name",
+      headerName: "Client Name",
       flex: 1,
-      cellClassName: "name-column--cell",
       renderCell: (params) => (
-        <Link
-          to={`/purchased/${params.row.id}`}
-          style={{
-            color: colors.greenAccent[300],
-            textDecoration: "underline",
-            cursor: "pointer",
-          }}
+        <MuiLink
+          component={Link}
+          to={`/references/${params.row.id}`}
+          underline="hover"
+          sx={{ color: colors.greenAccent[400], fontWeight: "bold" }}
         >
           {params.value}
-        </Link>
+        </MuiLink>
       ),
     },
+    { field: "client_phone", headerName: "Client Phone", flex: 1 },
+    { field: "client_package", headerName: "Package", flex: 1 },
+    { field: "client_location", headerName: "Location", flex: 1 },
+    { field: "referer_name", headerName: "Referer Name", flex: 1 },
+    { field: "referer_phone", headerName: "Referer Phone", flex: 1 },
     {
-      field: "quantity",
-      headerName: "Quantity",
-      type: "number",
-      headerAlign: "left",
-      align: "left",
+      field: "awarded",
+      headerName: "Awarded",
+      flex: 0.8,
+      renderCell: (params) => (params.value ? "Yes" : "No"),
     },
-    { field: "seller_name", headerName: "Seller", flex: 1 },
-    { field: "seller_contact", headerName: "Seller Contact", flex: 1 },
     {
-      field: "price",
-      headerName: "Price",
-      type: "number",
-      headerAlign: "left",
-      align: "left",
+      field: "created_by",
+      headerName: "Created by",
+      flex: 1,
+      valueGetter: (params) => {
+        const createdBy = params.row.created_by;
+        return createdBy
+          ? `${createdBy.first_name} ${createdBy.last_name}`
+          : "N/A";
+      },
     },
-    { field: "status", headerName: "Status", flex: 1 },
-    ...(userData?.role === "admin"
-      ? [
-          {
-            field: "created_by",
-            headerName: "Created by",
-            flex: 1,
-            valueGetter: (params) => {
-              const createdBy = params.row.created_by;
-              return createdBy
-                ? `${createdBy.first_name} ${createdBy.last_name}`
-                : "";
-            },
-          },
-        ]
-      : []),
     {
       field: "created_at",
       headerName: "Created",
@@ -87,26 +74,25 @@ const Purchases = ({ userData }) => {
     },
   ];
 
-  // 🔎 Filter purchases based on search input
-  const filteredData = purchasesData.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (item.seller_name &&
-      item.seller_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (item.seller_contact &&
-      item.seller_contact.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (item.status && item.status.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (item.price && item.price.toString().includes(searchQuery)) ||
-    (item.quantity && item.quantity.toString().includes(searchQuery))
+  // 🔎 Filter references based on search input
+  const filteredData = referencesData.filter((item) =>
+    item.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.client_phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.client_package?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.client_location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.referer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.referer_phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.mpesa_message?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <Box m="20px">
-      <Header title="PURCHASES" subtitle="List of Purchase Items" />
+      <Header title="REFERENCES" subtitle="List of Client References" />
 
-      {/* Create New Purchase Button */}
+      {/* Create New Reference Button */}
       <Button
         component={Link}
-        to="/create-purchase"
+        to="/add-reference"
         variant="contained"
         sx={{
           mb: 2,
@@ -118,12 +104,12 @@ const Purchases = ({ userData }) => {
           textTransform: "none",
         }}
       >
-        Create New Purchase
+        Create New Reference
       </Button>
 
       {/* 🔎 Search Bar */}
       <TextField
-        label="Search Purchases"
+        label="Search References"
         variant="outlined"
         fullWidth
         sx={{ mb: 2 }}
@@ -137,7 +123,6 @@ const Purchases = ({ userData }) => {
         sx={{
           "& .MuiDataGrid-root": { border: "none" },
           "& .MuiDataGrid-cell": { borderBottom: "none" },
-          "& .name-column--cell": { color: colors.greenAccent[300] },
           "& .MuiDataGrid-columnHeaders": {
             backgroundColor: colors.blueAccent[700],
             borderBottom: "none",
@@ -161,10 +146,11 @@ const Purchases = ({ userData }) => {
           rows={filteredData}
           columns={columns}
           components={{ Toolbar: GridToolbar }}
+          getRowId={(row) => row.id}
         />
       </Box>
     </Box>
   );
 };
 
-export default Purchases;
+export default References;

@@ -1,4 +1,4 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, TextField } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
@@ -7,10 +7,11 @@ import { useEffect, useState } from "react";
 import api from "../../api";
 import { Link } from "react-router-dom";
 
-const Stock = ({userData}) => {
+const Stock = ({ userData }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [stockData, setStockData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchStock = async () => {
     try {
@@ -71,22 +72,31 @@ const Stock = ({userData}) => {
       field: "created_at",
       headerName: "Created",
       flex: 1,
-      valueGetter: (params) =>
-        new Date(params.row.created_at).toLocaleString(),
+      valueGetter: (params) => new Date(params.row.created_at).toLocaleString(),
     },
   ];
+
+  // 🔎 Filter the stock data based on search query
+  const filteredData = stockData.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description &&
+        item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.item_id && item.item_id.toString().includes(searchQuery))
+  );
 
   return (
     <Box m="20px">
       <Header title="Stock" subtitle="List of Purchase Items" />
-      {/* Create New Purchase Button */}
+
+      {/* Add into Stock Button */}
       <Button
         component={Link}
         to="/add-stock"
         variant="contained"
         sx={{
           mb: 2,
-          backgroundColor: colors.greenAccent[400],
+          backgroundColor: colors.greenAccent[600],
           color: colors.grey[100],
           "&:hover": {
             backgroundColor: colors.greenAccent[500],
@@ -94,8 +104,20 @@ const Stock = ({userData}) => {
           textTransform: "none",
         }}
       >
-        Add New Stock
+        Add into Stock
       </Button>
+
+      {/* 🔎 Search Bar */}
+      <TextField
+        label="Search Stock"
+        variant="outlined"
+        fullWidth
+        sx={{ mb: 2 }}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+
+      {/* Stock Data Table */}
       <Box
         m="40px 0 0 0"
         height="75vh"
@@ -129,7 +151,7 @@ const Stock = ({userData}) => {
         }}
       >
         <DataGrid
-          rows={stockData}
+          rows={filteredData}
           columns={columns}
           components={{ Toolbar: GridToolbar }}
         />

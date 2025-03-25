@@ -63,6 +63,9 @@ INSTALLED_APPS = [
     "purchased",
     "in_stock",
     "deployed",
+    "equipments",
+    "notifications",
+    "references",
 ]
 
 AUTH_USER_MODEL = "api.User"

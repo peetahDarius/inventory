@@ -30,4 +30,7 @@ urlpatterns = [
     path("api/purchased/", include("purchased.urls")),
     path("api/stock/", include("in_stock.urls")),
     path("api/deployed/", include("deployed.urls")),
+    path("api/equipments/", include("equipments.urls")),
+    path("api/notifications/", include("notifications.urls")),
+    path("api/references/", include("references.urls")),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

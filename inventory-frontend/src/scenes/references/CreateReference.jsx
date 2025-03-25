@@ -1,12 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
   TextField,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Typography,
   Dialog,
   DialogTitle,
@@ -34,33 +30,35 @@ const containerStyle = {
 
 const defaultCenter = { lat: -1.5312, lng: 37.2674 };
 
-const DeployItem = () => {
+const CreateReference = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
 
-  const [availableItems, setAvailableItems] = useState([]);
-  const [selectedItem, setSelectedItem] = useState("");
-  const [quantity, setQuantity] = useState(0);
-  const [apartment, setApartment] = useState("");
-  const [searchAddress, setSearchAddress] = useState("");
+  const [formData, setFormData] = useState({
+    client_name: "",
+    client_phone: "",
+    client_package: "",
+    client_location: "",
+    referer_name: "",
+    referer_phone: "",
+    mpesa_message: "",
+  });
+
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [savedCoordinates, setSavedCoordinates] = useState(null);
-  const [openLocationModal, setOpenLocationModal] = useState(false);
   const [tempCoordinates, setTempCoordinates] = useState(null);
+  const [openLocationModal, setOpenLocationModal] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
+  const [searchAddress, setSearchAddress] = useState("");
 
-  useEffect(() => {
-    const fetchStock = async () => {
-      try {
-        const response = await api.get("/api/stock/");
-        setAvailableItems(response.data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchStock();
-  }, []);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleMapDoubleClick = (event) => {
     const lat = event.latLng.lat();
@@ -98,97 +96,102 @@ const DeployItem = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (!selectedItem) {
-      alert("Please select an item.");
-      return;
-    }
-    if (!quantity) {
-      alert("Please enter the quantity.");
-      return;
-    }
+  const handleSubmit = async () => {
     if (!savedCoordinates) {
       alert("Please select a location from the map by double-clicking.");
       return;
     }
 
     const dataToSend = {
-      stock_id: selectedItem.item_id,
-      name: selectedItem.name,
-      description: selectedItem.description,
-      quantity,
-      location: apartment,
+      ...formData,
       latitude: savedCoordinates.lat,
       longitude: savedCoordinates.lng,
+      awarded: false,
     };
+
     try {
-      const response = await api.post("/api/deployed/", dataToSend);
+      const response = await api.post("/api/references/", dataToSend);
       if (response.status === 201 || response.status === 200) {
-        alert("Item deployed successfully!");
-        setSelectedItem("");
-        setQuantity("");
-        setApartment("");
-        setSavedCoordinates(null);
-        navigate("/deployed");
+        alert("Reference created successfully!");
+        navigate("/references");
       } else {
-        alert("Error deploying item.");
+        alert("Error creating reference.");
       }
     } catch (error) {
-      console.error("Error deploying item:", error);
-      // Check if the error response exists and display the actual message
+      console.error("Error creating reference:", error);
       const errorMessage =
         error.response?.data?.detail ||
         error.response?.data?.message ||
         JSON.stringify(error.response?.data) ||
-        "Error deploying item. Please try again.";
+        "Error. Please try again.";
       alert(errorMessage);
     }
   };
 
   return (
     <Box m="20px">
-      <Header title="Deploy to Site" subtitle="Deploy an item to Site" />
+      <Header title="Create Reference" subtitle="Add a new client reference" />
+
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <FormControl fullWidth>
-          <InputLabel id="select-item-label">Select Item</InputLabel>
-          <Select
-            labelId="select-item-label"
-            value={selectedItem}
-            onChange={(e) => setSelectedItem(e.target.value)}
-            MenuProps={{
-              PaperProps: {
-                style: {
-                  maxHeight: 300,
-                  overflowY: "auto",
-                },
-              },
-            }}
-          >
-            {availableItems.map((item) => (
-              <MenuItem key={item.item_id} value={item}>
-                {`${item.name} - ${item.description}`}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
         <TextField
-          label="Quantity"
-          placeholder="Enter quantity"
-          type="number"
+          label="Client Name"
+          name="client_name"
           fullWidth
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
+          value={formData.client_name}
+          onChange={handleChange}
         />
 
         <TextField
-          label="Apartment"
-          placeholder="Building/location of deployment"
+          label="Client Phone"
+          name="client_phone"
           fullWidth
-          value={apartment}
-          onChange={(e) => setApartment(e.target.value)}
+          value={formData.client_phone}
+          onChange={handleChange}
         />
 
+        <TextField
+          label="Client Package"
+          name="client_package"
+          fullWidth
+          value={formData.client_package}
+          onChange={handleChange}
+        />
+
+        <TextField
+          label="Client Location"
+          name="client_location"
+          fullWidth
+          value={formData.client_location}
+          onChange={handleChange}
+        />
+
+        <TextField
+          label="Referer Name"
+          name="referer_name"
+          fullWidth
+          value={formData.referer_name}
+          onChange={handleChange}
+        />
+
+        <TextField
+          label="Referer Phone"
+          name="referer_phone"
+          fullWidth
+          value={formData.referer_phone}
+          onChange={handleChange}
+        />
+
+        <TextField
+          label="MPESA Message"
+          name="mpesa_message"
+          fullWidth
+          multiline
+          rows={4}
+          value={formData.mpesa_message}
+          onChange={handleChange}
+        />
+
+        {/* Google Maps */}
         <LoadScript
           googleMapsApiKey={GOOGLE_MAPS_API_KEY}
           libraries={["places"]}
@@ -214,11 +217,12 @@ const DeployItem = () => {
             {savedCoordinates && <Marker position={savedCoordinates} />}
           </GoogleMap>
         </LoadScript>
+
         <TextField
           label="Latitude"
           fullWidth
           value={savedCoordinates ? savedCoordinates.lat : ""}
-          InputProps={{ readOnly: true }} // Makes it non-editable
+          InputProps={{ readOnly: true }}
         />
 
         <TextField
@@ -227,15 +231,17 @@ const DeployItem = () => {
           value={savedCoordinates ? savedCoordinates.lng : ""}
           InputProps={{ readOnly: true }}
         />
+
         <Button
           variant="contained"
-          onClick={handleSave}
+          onClick={handleSubmit}
           sx={{ mb: 3, backgroundColor: colors.greenAccent[400] }}
         >
-          Save
+          Submit Reference
         </Button>
       </Box>
 
+      {/* Confirm Location Modal */}
       <Dialog open={openLocationModal} onClose={handleCancelLocation}>
         <DialogTitle>Save Location</DialogTitle>
         <DialogContent>
@@ -243,6 +249,7 @@ const DeployItem = () => {
             Do you want to save this location?
             {tempCoordinates && (
               <>
+                <br />
                 Latitude: {tempCoordinates.lat.toFixed(4)}, Longitude:{" "}
                 {tempCoordinates.lng.toFixed(4)}
               </>
@@ -258,4 +265,4 @@ const DeployItem = () => {
   );
 };
 
-export default DeployItem;
+export default CreateReference;

@@ -169,6 +169,20 @@ const Sidebar = ({ userData }) => {
               selected={selected}
               setSelected={setSelected}
             />
+            <Item
+              title="Equipments"
+              to="/equipments"
+              icon={<TimelineOutlinedIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
+            <Item
+              title="References"
+              to="/references"
+              icon={<ContactsOutlinedIcon />}
+              selected={selected}
+              setSelected={setSelected}
+            />
           </Box>
         </Menu>
       </ProSidebar>

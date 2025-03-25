@@ -23,6 +23,11 @@ import { fetchUser } from "./redux";
 import { jwtDecode } from 'jwt-decode';
 import { ACCESS_TOKEN } from './apiConstants';
 import StockedItem from "./scenes/stock/StockedItem";
+import Equipments from "./scenes/equipments";
+import AddEquipments from "./scenes/equipments/AddEquipment";
+import References from "./scenes/references";
+import CreateReference from "./scenes/references/CreateReference";
+import Reference from "./scenes/references/Reference";
 
 function App({fetchUser, userData}) {
   const navigate = useNavigate()
@@ -174,6 +179,46 @@ useEffect(() => {
                 element={
                   <ProtectedRoute>
                     <DeployedItem userData={userData.user} />
+                  </ProtectedRoute>
+                }
+              />
+               <Route
+                path="/equipments"
+                element={
+                  <ProtectedRoute>
+                    <Equipments />
+                  </ProtectedRoute>
+                }
+              />
+               <Route
+                path="/add-equipment"
+                element={
+                  <ProtectedRoute>
+                    <AddEquipments />
+                  </ProtectedRoute>
+                }
+              />
+               <Route
+                path="/references"
+                element={
+                  <ProtectedRoute>
+                    <References />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/add-reference"
+                element={
+                  <ProtectedRoute>
+                    <CreateReference />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/references/:id"
+                element={
+                  <ProtectedRoute>
+                    <Reference userData={userData.user} />
                   </ProtectedRoute>
                 }
               />

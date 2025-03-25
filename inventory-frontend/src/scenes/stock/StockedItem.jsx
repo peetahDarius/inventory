@@ -1,4 +1,11 @@
-import { Box, Typography, Paper, Button, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Divider,
+  TextField,
+} from "@mui/material";
 import { useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
@@ -6,24 +13,36 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../../api";
 
-const StockedItem = ({userData}) => {
+const StockedItem = ({ userData }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { id } = useParams();
   const navigate = useNavigate();
   const [item, setItem] = useState(null);
+  const [quantity, setQuantity] = useState("");
 
   useEffect(() => {
     const fetchItem = async () => {
       try {
         const response = await api.get(`/api/stock/${id}/`);
         setItem(response.data);
+        setQuantity(response.data.quantity);
       } catch (error) {
         console.error("Failed to fetch item details:", error);
       }
     };
     fetchItem();
   }, [id]);
+
+  const handleUpdate = async () => {
+    const data = {...item, quantity}
+    try {
+      await api.put(`/api/stock/${id}/`, data );
+      alert("Quantity updated successfully!");
+    } catch (error) {
+      console.error("Failed to update quantity:", error);
+    }
+  };
 
   if (!item) {
     return (
@@ -56,7 +75,7 @@ const StockedItem = ({userData}) => {
           onClick={() => navigate(-1)}
           sx={{
             mb: 2,
-            backgroundColor: colors.greenAccent[400],
+            backgroundColor: colors.greenAccent[700],
             color: colors.grey[100],
             textTransform: "none",
           }}
@@ -78,60 +97,43 @@ const StockedItem = ({userData}) => {
             mb: 2,
           }}
         >
-          <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: "bold", color: colors.grey[100] }}
+          >
             Quantity:
           </Typography>
-          <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-            {item.quantity}
-          </Typography>
+          <TextField
+            type="number"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            variant="outlined"
+            sx={{ backgroundColor: colors.grey[900], borderRadius: 1 }}
+          />
 
-          <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: "bold", color: colors.grey[100] }}
+          >
             Description:
           </Typography>
           <Typography variant="body1" sx={{ color: colors.grey[100] }}>
             {item.description}
           </Typography>
-
-          <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
-            Item ID:
-          </Typography>
-          <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-            {item.item_id}
-          </Typography>
-
-
-          {item.seller_name && (
-            <>
-              <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
-                Seller Name:
-              </Typography>
-              <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-                {item.seller_name}
-              </Typography>
-            </>
-          )}
-
-          {item.seller_contact && (
-            <>
-              <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
-                Seller Contact:
-              </Typography>
-              <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-                {item.seller_contact}
-              </Typography>
-            </>
-          )}
-
-          {item.seller_description && (
-            <>
-              <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
-                Seller Description:
-              </Typography>
-              <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-                {item.seller_description}
-              </Typography>
-            </>
-          )}
+        </Box>
+        <Divider sx={{ my: 2, borderColor: colors.grey[600] }} />
+        <Box display="flex" justifyContent="center" mt={3}>
+          <Button
+            variant="contained"
+            onClick={handleUpdate}
+            sx={{
+              backgroundColor: colors.blueAccent[500],
+              color: colors.grey[100],
+              textTransform: "none",
+            }}
+          >
+            Update
+          </Button>
         </Box>
         <Divider sx={{ my: 2, borderColor: colors.grey[600] }} />
         <Box
@@ -141,29 +143,40 @@ const StockedItem = ({userData}) => {
             gap: 2,
           }}
         >
-          <Typography variant="body2" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: "bold", color: colors.grey[100] }}
+          >
             Created At:
           </Typography>
           <Typography variant="body2" sx={{ color: colors.grey[100] }}>
             {new Date(item.created_at).toLocaleString()}
           </Typography>
 
-          <Typography variant="body2" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: "bold", color: colors.grey[100] }}
+          >
             Updated At:
           </Typography>
           <Typography variant="body2" sx={{ color: colors.grey[100] }}>
             {new Date(item.updated_at).toLocaleString()}
           </Typography>
-          {userData.role === "admin" && <>
-            <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
-            Created By:
-          </Typography>
-          <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-            {item.created_by
-              ? `${item.created_by.first_name} ${item.created_by.last_name}`
-              : "N/A"}
-          </Typography>
-          </>}
+          {userData.role === "admin" && (
+            <>
+              <Typography
+                variant="body1"
+                sx={{ fontWeight: "bold", color: colors.grey[100] }}
+              >
+                Created By:
+              </Typography>
+              <Typography variant="body1" sx={{ color: colors.grey[100] }}>
+                {item.created_by
+                  ? ` ${item.created_by.first_name} ${item.created_by.last_name} `
+                  : "N/A"}
+              </Typography>
+            </>
+          )}
         </Box>
       </Paper>
     </Box>

@@ -1,4 +1,4 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, TextField } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
@@ -7,10 +7,11 @@ import { useEffect, useState } from "react";
 import api from "../../api";
 import { Link } from "react-router-dom";
 
-const Deployed = ({userData}) => {
+const Deployed = ({ userData }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [deployedData, setDeployedData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchDeployed = async () => {
     try {
@@ -61,20 +62,21 @@ const Deployed = ({userData}) => {
       align: "left",
     },
     { field: "description", headerName: "Description", flex: 1 },
-    ...(userData?.row === "admin" ? [
-      {
-        field: "created_by",
-        headerName: "Created by",
-        flex: 1,
-        valueGetter: (params) => {
-          const createdBy = params.row.created_by;
-          return createdBy ? `${createdBy.first_name} ${createdBy.last_name}` : "";
-        },
-      },
-    ]
-    :
-    []
-  ),
+    ...(userData?.role === "admin"
+      ? [
+          {
+            field: "created_by",
+            headerName: "Created by",
+            flex: 1,
+            valueGetter: (params) => {
+              const createdBy = params.row.created_by;
+              return createdBy
+                ? `${createdBy.first_name} ${createdBy.last_name}`
+                : "";
+            },
+          },
+        ]
+      : []),
     {
       field: "created_at",
       headerName: "Created",
@@ -84,17 +86,29 @@ const Deployed = ({userData}) => {
     },
   ];
 
+  // 🔎 Filtering logic based on searchQuery
+  const filteredData = deployedData.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description &&
+        item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.location &&
+        item.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.stock_id && item.stock_id.toString().includes(searchQuery))
+  );
+
   return (
     <Box m="20px">
       <Header title="Deployed" subtitle="List of Deployed Items" />
-      {/* Create New Purchase Button */}
+
+      {/* Deploy Item Button */}
       <Button
         component={Link}
         to="/deploy-item"
         variant="contained"
         sx={{
           mb: 2,
-          backgroundColor: colors.greenAccent[400],
+          backgroundColor: colors.greenAccent[600],
           color: colors.grey[100],
           "&:hover": {
             backgroundColor: colors.greenAccent[500],
@@ -102,8 +116,20 @@ const Deployed = ({userData}) => {
           textTransform: "none",
         }}
       >
-        Deploy an item
+        Deploy to Site
       </Button>
+
+      {/* 🔎 Search Bar */}
+      <TextField
+        label="Search Deployed Items"
+        variant="outlined"
+        fullWidth
+        sx={{ mb: 2 }}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+
+      {/* Data Grid */}
       <Box
         m="40px 0 0 0"
         height="75vh"
@@ -137,7 +163,7 @@ const Deployed = ({userData}) => {
         }}
       >
         <DataGrid
-          rows={deployedData}
+          rows={filteredData}
           columns={columns}
           components={{ Toolbar: GridToolbar }}
         />
