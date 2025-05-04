@@ -1,4 +1,15 @@
-import { Box, Typography, Paper, Button, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
+} from "@mui/material";
 import { useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
@@ -6,12 +17,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../../api";
 
-const PurchasedItem = ({userData}) => {
+const PurchasedItem = ({ userData }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { id } = useParams();
   const navigate = useNavigate();
   const [item, setItem] = useState(null);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -24,6 +36,19 @@ const PurchasedItem = ({userData}) => {
     };
     fetchItem();
   }, [id]);
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/api/purchased/${id}/`);
+      alert("Item deleted successfully");
+      navigate("/purchase");
+    } catch (error) {
+      console.error("Failed to delete the item", error);
+    }
+  };
+
+  const handleOpenModal = () => setOpenDeleteModal(true);
+  const handleCloseModal = () => setOpenDeleteModal(false);
 
   if (!item) {
     return (
@@ -51,18 +76,49 @@ const PurchasedItem = ({userData}) => {
           margin: "auto",
         }}
       >
-        <Button
-          variant="contained"
-          onClick={() => navigate(-1)}
-          sx={{
-            mb: 2,
-            backgroundColor: colors.greenAccent[400],
-            color: colors.grey[100],
-            textTransform: "none",
-          }}
-        >
-          Back to List
-        </Button>
+        {/* Buttons: Back & Delete */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => navigate(-1)}
+            sx={{
+              backgroundColor: colors.greenAccent[400],
+              color: colors.grey[100],
+              textTransform: "none",
+            }}
+          >
+            Back to List
+          </Button>
+            {userData.role === "admin" && 
+            <Button
+            variant="contained"
+            color="error"
+            onClick={handleOpenModal}
+            sx={{ textTransform: "none" }}
+          >
+            Delete
+          </Button>
+            }
+          
+        </Box>
+
+        {/* Delete Confirmation Modal */}
+        <Dialog open={openDeleteModal} onClose={handleCloseModal}>
+          <DialogTitle>Confirm Deletion</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this item? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseModal}>Cancel</Button>
+            <Button onClick={handleDelete} color="error">
+              Confirm Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Item Details */}
         <Typography
           variant="h4"
           sx={{ color: colors.grey[100], mb: 2, textTransform: "capitalize" }}
@@ -160,16 +216,19 @@ const PurchasedItem = ({userData}) => {
           <Typography variant="body2" sx={{ color: colors.grey[100] }}>
             {new Date(item.updated_at).toLocaleString()}
           </Typography>
-          {userData.role === "admin" && <>
-            <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
-            Created By:
-          </Typography>
-          <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-            {item.created_by
-              ? `${item.created_by.first_name} ${item.created_by.last_name}`
-              : "N/A"}
-          </Typography>
-          </>}
+
+          {userData.role === "admin" && (
+            <>
+              <Typography variant="body1" sx={{ fontWeight: "bold", color: colors.grey[100] }}>
+                Created By:
+              </Typography>
+              <Typography variant="body1" sx={{ color: colors.grey[100] }}>
+                {item.created_by
+                  ? `${item.created_by.first_name} ${item.created_by.last_name}`
+                  : "N/A"}
+              </Typography>
+            </>
+          )}
         </Box>
       </Paper>
     </Box>

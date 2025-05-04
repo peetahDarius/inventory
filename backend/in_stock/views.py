@@ -21,9 +21,17 @@ class ListCreateStockView(generics.GenericAPIView, mixins.CreateModelMixin, mixi
     
     def post(self, request, *args, **kwargs):
         item_id = request.data.get("item_id")
+        item_name = request.data.get("name")
+        item_quantity = request.data.get("quantity")
         
         if not item_id:
             return Response({"detail": "item_id is required"})
+        
+        if not item_name:
+            return Response({"detail": "name is required"})
+        
+        if not item_quantity:
+            return Response({"detail": "quantity is required"})
         
         request.data["created_by"] = request.user.id
         
@@ -31,7 +39,15 @@ class ListCreateStockView(generics.GenericAPIView, mixins.CreateModelMixin, mixi
             pending_item = PurchasedItem.objects.get(id=item_id)
             pending_item.status = "stocked"
             pending_item.save()
-            return self.create(request, *args, **kwargs)
+            
+            try:
+                stock_item = Stock.objects.get(name=item_name)
+                stock_item.quantity += item_quantity
+                stock_item.save()
+                return Response(data=request.data, status=status.HTTP_201_CREATED)
+                
+            except Stock.DoesNotExist:
+                return self.create(request, *args, **kwargs)
         
         except PurchasedItem.DoesNotExist:
             response = {"detail": f"purchased item with id {item_id} not found"}

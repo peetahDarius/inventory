@@ -1,4 +1,15 @@
-import { Box, Typography, Paper, Button, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
 import { useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
@@ -12,6 +23,7 @@ const DeployedItem = ({ userData }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [item, setItem] = useState(null);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -24,6 +36,22 @@ const DeployedItem = ({ userData }) => {
     };
     fetchItem();
   }, [id]);
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/api/deployed/${id}/`);
+      alert("Item deleted successfully");
+      navigate("/deployed");
+    } catch (error) {
+      console.error("Failed to delete the item", error);
+      alert("Failed to delete item.");
+    } finally {
+      setOpenDeleteModal(false);
+    }
+  };
+
+  const handleOpenModal = () => setOpenDeleteModal(true);
+  const handleCloseModal = () => setOpenDeleteModal(false);
 
   if (!item) {
     return (
@@ -51,18 +79,47 @@ const DeployedItem = ({ userData }) => {
           margin: "auto",
         }}
       >
-        <Button
-          variant="contained"
-          onClick={() => navigate(-1)}
-          sx={{
-            mb: 2,
-            backgroundColor: colors.greenAccent[400],
-            color: colors.grey[100],
-            textTransform: "none",
-          }}
-        >
-          Back to List
-        </Button>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => navigate(-1)}
+            sx={{
+              backgroundColor: colors.greenAccent[400],
+              color: colors.grey[100],
+              textTransform: "none",
+            }}
+          >
+            Back to List
+          </Button>
+          {userData.role === "admin" && (
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleOpenModal}
+              sx={{ textTransform: "none" }}
+            >
+              Delete
+            </Button>
+          )}
+        </Box>
+
+        {/* Delete Confirmation Modal */}
+        <Dialog open={openDeleteModal} onClose={handleCloseModal}>
+          <DialogTitle>Confirm Deletion</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this deployed item? This action
+              cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseModal}>Cancel</Button>
+            <Button onClick={handleDelete} color="error">
+              Confirm Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Typography
           variant="h4"
           sx={{ color: colors.grey[100], mb: 2, textTransform: "capitalize" }}
@@ -145,6 +202,7 @@ const DeployedItem = ({ userData }) => {
           <Typography variant="body2" sx={{ color: colors.grey[100] }}>
             {new Date(item.updated_at).toLocaleString()}
           </Typography>
+
           {userData.role === "admin" && (
             <>
               <Typography
@@ -162,6 +220,7 @@ const DeployedItem = ({ userData }) => {
           )}
         </Box>
       </Paper>
+
       {/* Google Maps Iframe */}
       <Box
         p="20px"
